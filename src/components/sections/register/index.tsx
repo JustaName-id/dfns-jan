@@ -27,7 +27,6 @@ export default function RegisterUser() {
                 }),
             })
             const challenge = await initRes.json()
-            console.log(JSON.stringify(challenge, null, 2))
 
             const webauthn = new WebAuthnSigner({
                 relyingParty: {
@@ -36,7 +35,6 @@ export default function RegisterUser() {
                 },
             })
             const attestation = await webauthn.create(challenge)
-            console.log(JSON.stringify(attestation, null, 2))
 
             // Finish delegated registration
             const completeRes = await fetch('/api/register/complete', {

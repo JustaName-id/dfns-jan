@@ -2,6 +2,7 @@
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { DFNSConnector } from '@/connectors/DFNSConnector'
 import { WebAuthnSigner } from '@dfns/sdk-browser'
 import { JustWeb3Button } from '@justweb3/widget'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
@@ -14,18 +15,17 @@ export default function Wallets() {
     const [sighash, setSighash] = useState<any>(undefined)
     const [error, setError] = useState<any>(undefined)
 
-    const { connect, connectors } = useConnect();
-
-    // Get WalletConnect connector
+    const { connect, connectors, error: connectError } = useConnect();
     const walletConnectConnector = connectors.find(
         ({ id }) => id === 'walletConnect'
     );
+
+    console.log('connectors error', connectError)
 
     const listenForWalletConnectUri = async (
         walletConnectConnector: Connector
     ) => {
         const provider = await walletConnectConnector.getProvider();
-
         // @ts-expect-error
         provider.once('display_uri', (uri) => {
             console.log('WalletConnect URI:', uri);
@@ -121,12 +121,28 @@ export default function Wallets() {
         }
     }
 
+    const connectDFNSWallet = async (wallet: any) => {
+        try {
+            const connector = new DFNSConnector({ wallet, chainId: 11155111 })
+            await connect({ connector })
+        } catch (err: any) {
+            setError(err.message)
+        }
+    }
+
     return (
         <div className='flex flex-col items-center gap-5'>
             <div className='flex flex-col gap-5 items-center'>
                 <h3>Current Wallets</h3>
-                {!!wallets && (
-                    <pre className="p-4 drop-shadow-lg mt-2 overflow-x-scroll">{wallets.items[0].address}</pre>
+                {wallets && wallets.items && wallets.items.length > 0 ? (
+                    wallets.items.map((wallet: any) => (
+                        <div key={wallet.id} className="flex items-center gap-4">
+                            <span>{wallet.address}</span>
+                            <Button onClick={() => connectDFNSWallet(wallet)}>Connect</Button>
+                        </div>
+                    ))
+                ) : (
+                    <div>No wallets found</div>
                 )}
             </div>
             <div className='flex flex-col items-center gap-5'>
@@ -152,6 +168,7 @@ export default function Wallets() {
                     listenForWalletConnectUri(walletConnectConnector);
                     connect({ connector: walletConnectConnector, chainId: 11155111 });
                 }}>Get WalletConnect URI</Button>
+
                 <JustWeb3Button>
                     <ConnectButton />
                 </JustWeb3Button>

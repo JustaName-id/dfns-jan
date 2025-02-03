@@ -30,7 +30,6 @@ export const Providers: React.FC<ProviderProps> = (props) => {
   const { wallets } = getDefaultWallets();
   const [queryClient] = useState(() => new QueryClient());
 
-  // console.log('wallets', wallets);
 
   const config = getDefaultConfig({
     appName: 'Dfns - JustAName',
