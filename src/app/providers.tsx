@@ -41,12 +41,8 @@ export const Providers: React.FC<ProviderProps> = (props) => {
     ssr: true,
     transports: {
       [mainnet.id]: http(
-
         process.env.NEXT_PUBLIC_MAINNET_PROVIDER_URL as string
       ),
-      // [sepolia.id]: http(
-      //   process.env.NEXT_PUBLIC_SEPOLIA_PROVIDER_URL as string
-      // ),
     },
   });
 
@@ -61,10 +57,6 @@ export const Providers: React.FC<ProviderProps> = (props) => {
         chainId: 1,
         providerUrl: process.env.NEXT_PUBLIC_MAINNET_PROVIDER_URL as string,
       },
-      // {
-      //   chainId: 11155111,
-      //   providerUrl: process.env.NEXT_PUBLIC_SEPOLIA_PROVIDER_URL as string,
-      // },
     ],
     enableAuth: true,
     openOnWalletConnect: true,
