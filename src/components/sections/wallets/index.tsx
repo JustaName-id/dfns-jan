@@ -11,7 +11,7 @@ export default function Wallets() {
 
     const { connect } = useConnect();
     const { wallets, walletsLoading, refetchWallets } = useWallets();
-    const { isAuthenticated } = useAuth()
+    const { isAuthenticated, refetch } = useAuth()
 
 
     const connectDFNSWallet = async (wallet: any) => {
@@ -27,7 +27,7 @@ export default function Wallets() {
     return (
         <div className='flex flex-col items-center gap-5'>
             <div className='flex flex-col items-center gap-5'>
-                <JustWeb3Button logout={refetchWallets}>
+                <JustWeb3Button logout={() => { refetch(); refetchWallets() }}>
                     <div className='flex flex-col gap-5 items-center'>
                         <h3>Current Wallets</h3>
                         {isAuthenticated ? (

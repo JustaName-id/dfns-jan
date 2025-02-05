@@ -1,7 +1,7 @@
 import type { Connector, ConnectorEventMap } from "wagmi";
-import EventEmitter from "eventemitter3";
 import { WebAuthnSigner } from "@dfns/sdk-browser";
 import { getAddress } from "viem";
+import { Emitter } from "@wagmi/core/internal";
 
 export interface DFNSWallet {
   id: string;
@@ -162,14 +162,18 @@ class DFNSProvider {
 }
 
 export class DFNSConnector implements Connector {
+  [key: string]: unknown;
+
   readonly id = "dfns";
   readonly name = "DFNS Wallet";
+  readonly uid = `${this.id}:${this.name}`;
   readonly ready = true;
+  readonly type = "dfns" as const;
 
   wallet: DFNSWallet;
   chainId: number;
   providerInstance: DFNSProvider | null = null;
-  private emitter = new EventEmitter();
+  emitter = new Emitter<ConnectorEventMap>(this.uid);
   private connected = false;
 
   constructor({ wallet, chainId }: { wallet: DFNSWallet; chainId: number }) {
@@ -241,5 +245,23 @@ export class DFNSConnector implements Connector {
   }
   emit(event: string, ...args: any[]): void {
     this.emitter.emit(event, ...args);
+  }
+
+  async getAccounts() {
+    return [getAddress(this.wallet.address!)];
+  }
+
+  onAccountsChanged(accounts: string[]) {
+    if (accounts.length === 0) this.emit("disconnect");
+    else this.emit("change", { account: accounts[0] as `0x${string}` });
+  }
+
+  onChainChanged(chain: number | string) {
+    const id = Number(chain);
+    this.emit("change", { chain: { id, unsupported: false } });
+  }
+
+  onDisconnect() {
+    this.emit("disconnect");
   }
 }

@@ -2,16 +2,22 @@
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { useAuth } from "@/hooks/useAuth"
 import { useRegister } from "@/hooks/useRegister"
+import { useWallets } from "@/hooks/useWallets"
 import { FormEvent } from "react"
 
 export default function RegisterUser() {
     const { mutate: register, isPending: isRegistering } = useRegister()
+    const { refetch } = useAuth()
+    const { refetchWallets } = useWallets()
 
     const registerHandler = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault()
         const formData = new FormData(event.currentTarget)
         register(formData.get('username') as string)
+        refetch()
+        refetchWallets()
     }
     return (
         <div className='flex flex-col gap-3 items-center'>

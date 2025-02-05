@@ -7,7 +7,7 @@ export const POST = async (req: NextRequest) => {
   const registration = await client.auth.registerEndUser({
     body: {
       ...signedChallenge,
-      wallets: [{ network: "EthereumSepolia" }],
+      wallets: [{ network: "Ethereum" }],
     },
   });
   const response = NextResponse.json(registration);
