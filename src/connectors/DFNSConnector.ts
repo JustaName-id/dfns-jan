@@ -99,16 +99,15 @@ class DFNSProvider {
     params,
   }: {
     method: string;
-    // @ts-expect-error: params is any
-    params?: any[];
-    // @ts-expect-error: params is any
+    params: [message: string, account: string];
   }): Promise<any> {
+    // eslint-disable-line @typescript-eslint/no-explicit-any
     switch (method) {
       case "eth_accounts": {
         return [getAddress(this.wallet.address!).toLocaleLowerCase()];
       }
       case "personal_sign": {
-        const [message, account] = params || [];
+        const [message, account] = params;
         if (
           !this.wallet.address ||
           account.toLowerCase() !== this.wallet.address.toLowerCase()
@@ -239,18 +238,20 @@ export class DFNSConnector implements Connector {
     return this.connected;
   }
 
-  // @ts-expect-error: event is string
-  on(event: string, listener: (...args: any[]) => void): void {
+  on(event: keyof ConnectorEventMap, listener: (...args: any[]) => void): void {
+    // eslint-disable-line @typescript-eslint/no-explicit-any
     this.emitter.on(event, listener);
   }
 
-  // @ts-expect-error: event is string
-  off(event: string, listener: (...args: any[]) => void): void {
+  off(
+    event: keyof ConnectorEventMap,
+    listener: (...args: any[]) => void // eslint-disable-line @typescript-eslint/no-explicit-any
+  ): void {
     this.emitter.off(event, listener);
   }
 
-  // @ts-expect-error: event is string
-  emit(event: string, ...args: any[]): void {
+  emit(event: keyof ConnectorEventMap, ...args: any[]): void {
+    // eslint-disable-line @typescript-eslint/no-explicit-any
     this.emitter.emit(event, ...args);
   }
 

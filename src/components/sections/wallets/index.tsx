@@ -1,12 +1,13 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
-import { DFNSConnector } from '@/connectors/DFNSConnector'
+import { DFNSConnector, DFNSWallet } from '@/connectors/DFNSConnector'
 import { useWallets } from '@/hooks'
 import { useAuth } from '@/hooks/useAuth'
 import { JustWeb3Button } from '@justweb3/widget'
 import { useEffect } from 'react'
 import { useAccount, useConnect } from 'wagmi'
+
 
 export default function Wallets() {
 
@@ -15,8 +16,7 @@ export default function Wallets() {
     const { wallets, walletsLoading, refetchWallets } = useWallets();
     const { isAuthenticated, refetch } = useAuth()
 
-    // @ts-expect-error: wallet is any
-    const connectDFNSWallet = async (wallet: any) => {
+    const connectDFNSWallet = async (wallet: DFNSWallet) => {
         try {
             const connector = new DFNSConnector({ wallet, chainId: 1 })
             await connect({ connector })
@@ -40,8 +40,7 @@ export default function Wallets() {
                         <h3>Current Wallets</h3>
                         {isAuthenticated ? (
                             wallets && wallets.items && wallets.items.length > 0 ? (
-                                // @ts-expect-error: wallet is any
-                                wallets.items.map((wallet) => (
+                                wallets.items.map((wallet: DFNSWallet) => (
                                     <div key={wallet.id} className="flex items-center gap-4">
                                         <span>{wallet.address}</span>
                                         <Button onClick={() => connectDFNSWallet(wallet)}>Connect</Button>
