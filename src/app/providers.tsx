@@ -16,7 +16,7 @@ import {
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useState } from 'react';
 import { http, WagmiProvider } from 'wagmi';
-import { mainnet, sepolia } from 'wagmi/chains';
+import { mainnet } from 'wagmi/chains';
 
 interface ProviderProps {
   children: React.ReactNode;
