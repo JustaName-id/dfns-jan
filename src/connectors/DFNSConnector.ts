@@ -99,9 +99,9 @@ class DFNSProvider {
     params,
   }: {
     method: string;
-    // @ts-ignore
+    // @ts-expect-error
     params?: any[];
-    // @ts-ignore
+    // @ts-expect-error
   }): Promise<any> {
     switch (method) {
       case "eth_accounts": {
@@ -239,17 +239,17 @@ export class DFNSConnector implements Connector {
     return this.connected;
   }
 
-  // @ts-ignore
+  // @ts-expect-error
   on(event: string, listener: (...args: any[]) => void): void {
     this.emitter.on(event, listener);
   }
 
-  // @ts-ignore
+  // @ts-expect-error
   off(event: string, listener: (...args: any[]) => void): void {
     this.emitter.off(event, listener);
   }
 
-  // @ts-ignore
+  // @ts-expect-error
   emit(event: string, ...args: any[]): void {
     this.emitter.emit(event, ...args);
   }
