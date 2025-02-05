@@ -11,7 +11,7 @@ const fetchWallets = async () => {
     });
 
     return await res.json();
-  } catch (error: any) {
+  } catch (error) {
     console.log(error);
   }
 };

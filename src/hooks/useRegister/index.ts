@@ -34,7 +34,7 @@ export const register = async (username: string) => {
     });
 
     await completeRes.json();
-  } catch (error: any) {
+  } catch (error) {
     console.log(error);
     throw error;
   }
@@ -43,7 +43,7 @@ export const register = async (username: string) => {
 export const useRegister = () => {
   return useMutation({
     mutationFn: (username: string) => register(username),
-    onError: (error: any) => {
+    onError: (error) => {
       console.log(error);
       throw error;
     },

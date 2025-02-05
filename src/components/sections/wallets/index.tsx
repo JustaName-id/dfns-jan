@@ -15,12 +15,12 @@ export default function Wallets() {
     const { wallets, walletsLoading, refetchWallets } = useWallets();
     const { isAuthenticated, refetch } = useAuth()
 
-
+    // @ts-ignore
     const connectDFNSWallet = async (wallet: any) => {
         try {
             const connector = new DFNSConnector({ wallet, chainId: 1 })
             await connect({ connector })
-        } catch (err: any) {
+        } catch (err) {
             console.log('connectDFNSWallet error', err)
         }
     }
@@ -40,7 +40,8 @@ export default function Wallets() {
                         <h3>Current Wallets</h3>
                         {isAuthenticated ? (
                             wallets && wallets.items && wallets.items.length > 0 ? (
-                                wallets.items.map((wallet: any) => (
+                                // @ts-ignore
+                                wallets.items.map((wallet) => (
                                     <div key={wallet.id} className="flex items-center gap-4">
                                         <span>{wallet.address}</span>
                                         <Button onClick={() => connectDFNSWallet(wallet)}>Connect</Button>

@@ -15,7 +15,7 @@ export const login = async (username: string) => {
     const body = await loginRes.json();
 
     return body;
-  } catch (error: any) {
+  } catch (error) {
     throw error;
   }
 };
@@ -23,7 +23,7 @@ export const login = async (username: string) => {
 export const useLogin = () => {
   return useMutation({
     mutationFn: (username: string) => login(username),
-    onError: (error: any) => {
+    onError: (error) => {
       console.log(error);
       throw error;
     },
