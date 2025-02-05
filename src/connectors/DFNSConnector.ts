@@ -101,7 +101,6 @@ class DFNSProvider {
     method: string;
     params: [message: string, account: string];
   }): Promise<any> {
-    // eslint-disable-line @typescript-eslint/no-explicit-any
     switch (method) {
       case "eth_accounts": {
         return [getAddress(this.wallet.address!).toLocaleLowerCase()];
@@ -194,9 +193,10 @@ export class DFNSConnector implements Connector {
     this.providerInstance = new DFNSProvider(this.wallet);
     this.connected = true;
     this.emit("connect", {
-      account,
-      chain: { id: this.chainId, unsupported: false },
+      accounts: [getAddress(account!) as `0x${string}`],
+      chainId: this.chainId,
     });
+
     return {
       accounts: [getAddress(account!) as `0x${string}`],
       chainId: this.chainId,
@@ -216,7 +216,7 @@ export class DFNSConnector implements Connector {
     localStorage.removeItem("wagmi.connector");
     localStorage.removeItem("wagmi.store");
 
-    this.emit("disconnect", undefined);
+    this.emit("disconnect");
   }
 
   async getAccount() {
@@ -237,21 +237,22 @@ export class DFNSConnector implements Connector {
   async isAuthorized() {
     return this.connected;
   }
-
   on(event: keyof ConnectorEventMap, listener: (...args: any[]) => void): void {
-    // eslint-disable-line @typescript-eslint/no-explicit-any
     this.emitter.on(event, listener);
   }
 
   off(
     event: keyof ConnectorEventMap,
-    listener: (...args: any[]) => void // eslint-disable-line @typescript-eslint/no-explicit-any
+    listener: (...args: any[]) => void
   ): void {
     this.emitter.off(event, listener);
   }
-
-  emit(event: keyof ConnectorEventMap, ...args: any[]): void {
-    // eslint-disable-line @typescript-eslint/no-explicit-any
+  emit<T extends keyof ConnectorEventMap>(
+    event: T,
+    ...args: ConnectorEventMap[T] extends [never]
+      ? []
+      : [data: ConnectorEventMap[T]]
+  ): void {
     this.emitter.emit(event, ...args);
   }
 
@@ -261,12 +262,12 @@ export class DFNSConnector implements Connector {
 
   onAccountsChanged(accounts: string[]) {
     if (accounts.length === 0) this.emit("disconnect");
-    else this.emit("change", { account: accounts[0] as `0x${string}` });
+    else this.emit("change", { accounts: [accounts[0] as `0x${string}`] });
   }
 
   onChainChanged(chain: number | string) {
     const id = Number(chain);
-    this.emit("change", { chain: { id, unsupported: false } });
+    this.emit("change", { chainId: id });
   }
 
   onDisconnect() {

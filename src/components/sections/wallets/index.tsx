@@ -6,7 +6,7 @@ import { useWallets } from '@/hooks'
 import { useAuth } from '@/hooks/useAuth'
 import { JustWeb3Button } from '@justweb3/widget'
 import { useEffect } from 'react'
-import { useAccount, useConnect } from 'wagmi'
+import { Connector, useAccount, useConnect } from 'wagmi'
 
 
 export default function Wallets() {
@@ -19,7 +19,7 @@ export default function Wallets() {
     const connectDFNSWallet = async (wallet: DFNSWallet) => {
         try {
             const connector = new DFNSConnector({ wallet, chainId: 1 })
-            await connect({ connector })
+            await connect({ connector: connector as never as Connector })
         } catch (err) {
             console.log('connectDFNSWallet error', err)
         }
@@ -29,7 +29,7 @@ export default function Wallets() {
         if (isConnected) {
             refetch()
         }
-    }, [isConnected])
+    }, [isConnected, refetch])
 
 
     return (
