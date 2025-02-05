@@ -204,9 +204,13 @@ export class DFNSConnector implements Connector {
       method: "POST",
       credentials: "include",
     });
+    this.wallet.address = undefined;
+
     this.providerInstance = null;
     this.connected = false;
-    console.log("disconnect");
+    localStorage.removeItem("wagmi.connector");
+    localStorage.removeItem("wagmi.store");
+
     this.emit("disconnect", undefined);
   }
 

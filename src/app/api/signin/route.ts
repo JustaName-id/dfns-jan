@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getJustaname, Session, tap } from '../../../../lib';
-import { SignInResponse } from '@justaname.id/sdk';
+import { NextRequest, NextResponse } from "next/server";
+import { getJustaname, Session, tap } from "../../../../lib";
+import { SignInResponse } from "@justaname.id/sdk";
 
 export const POST = async (req: NextRequest) => {
   const { message, signature } = await req.json();
@@ -17,8 +17,9 @@ export const POST = async (req: NextRequest) => {
       domain: process.env.DOMAIN,
     });
   } catch (error) {
-    return tap(new NextResponse(error.message, { status: 422 }), (res) =>
-      session.clear(res)
+    return tap(
+      new NextResponse((error as Error).message, { status: 422 }),
+      (res) => session.clear(res)
     );
   }
 
@@ -26,7 +27,7 @@ export const POST = async (req: NextRequest) => {
 
   if (!success) {
     return tap(
-      new NextResponse(error?.type || 'something went wrong', { status: 422 }),
+      new NextResponse(error?.type || "something went wrong", { status: 422 }),
       (res) => session.clear(res)
     );
   }
@@ -35,5 +36,5 @@ export const POST = async (req: NextRequest) => {
   session.chainId = fields.chainId;
   session.ens = ens;
 
-  return tap(new NextResponse(''), (res) => session.persist(res));
+  return tap(new NextResponse(""), (res) => session.persist(res));
 };

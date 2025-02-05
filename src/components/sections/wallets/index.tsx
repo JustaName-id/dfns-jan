@@ -2,47 +2,16 @@
 
 import { Button } from '@/components/ui/button'
 import { DFNSConnector } from '@/connectors/DFNSConnector'
+import { useWallets } from '@/hooks'
+import { useAuth } from '@/hooks/useAuth'
 import { JustWeb3Button } from '@justweb3/widget'
-import { useEffect, useState } from 'react'
-import { useConnect, useDisconnect } from 'wagmi'
+import { useConnect } from 'wagmi'
 
 export default function Wallets() {
-    const [loading, setLoading] = useState(false)
-    const [wallets, setWallets] = useState<any>(undefined)
-    const [error, setError] = useState<any>(undefined)
 
-    const { connect, error: connectError } = useConnect();
-    const { disconnect } = useDisconnect();
-    console.log('connectors error', connectError)
-
-
-
-    const listWallets = async () => {
-        try {
-            setLoading(true)
-
-            const res = await fetch('/api/wallets/list', {
-                method: 'GET',
-                headers: {
-                    'content-type': 'application/json',
-                },
-                credentials: 'include'
-            })
-
-            setWallets(await res.json())
-            setError(undefined)
-        } catch (error: any) {
-            console.log(error)
-            setWallets(undefined)
-            setError(error)
-        } finally {
-            setLoading(false)
-        }
-    }
-
-    useEffect(() => {
-        listWallets()
-    }, [])
+    const { connect } = useConnect();
+    const { wallets, walletsLoading, refetchWallets } = useWallets();
+    const { isAuthenticated } = useAuth()
 
 
     const connectDFNSWallet = async (wallet: any) => {
@@ -50,7 +19,7 @@ export default function Wallets() {
             const connector = new DFNSConnector({ wallet, chainId: 11155111 })
             await connect({ connector })
         } catch (err: any) {
-            setError(err.message)
+            console.log('connectDFNSWallet error', err)
         }
     }
 
@@ -58,18 +27,22 @@ export default function Wallets() {
     return (
         <div className='flex flex-col items-center gap-5'>
             <div className='flex flex-col items-center gap-5'>
-                <JustWeb3Button >
+                <JustWeb3Button logout={refetchWallets}>
                     <div className='flex flex-col gap-5 items-center'>
                         <h3>Current Wallets</h3>
-                        {wallets && wallets.items && wallets.items.length > 0 ? (
-                            wallets.items.map((wallet: any) => (
-                                <div key={wallet.id} className="flex items-center gap-4">
-                                    <span>{wallet.address}</span>
-                                    <Button onClick={() => connectDFNSWallet(wallet)}>Connect</Button>
-                                </div>
-                            ))
+                        {isAuthenticated ? (
+                            wallets && wallets.items && wallets.items.length > 0 ? (
+                                wallets.items.map((wallet: any) => (
+                                    <div key={wallet.id} className="flex items-center gap-4">
+                                        <span>{wallet.address}</span>
+                                        <Button onClick={() => connectDFNSWallet(wallet)}>Connect</Button>
+                                    </div>
+                                ))
+                            ) : (
+                                walletsLoading ? <div>Loading...</div> : <div>No wallets found</div>
+                            )
                         ) : (
-                            <div>No wallets found</div>
+                            <div>Please login to see your wallets</div>
                         )}
                     </div>
                 </JustWeb3Button>

@@ -10,6 +10,17 @@ export const POST = async (req: NextRequest) => {
       wallets: [{ network: "EthereumSepolia" }],
     },
   });
+  const response = NextResponse.json(registration);
 
-  return NextResponse.json(registration);
+  response.cookies.set({
+    name: "authToken",
+    value: registration.authentication.token,
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    maxAge: 60 * 60 * 24 * 7,
+    path: "/",
+  });
+
+  return response;
 };

@@ -1,63 +1,45 @@
 'use client'
 
 import { Input } from '@/components/ui/input'
-import { FormEvent, useState } from 'react'
+import { useAuth } from '@/hooks/useAuth'
+import { useLogin } from '@/hooks/useLogin'
+import { useWallets } from '@/hooks/useWallets'
+import { FormEvent } from 'react'
 import { Button } from '../../ui/button'
-
 export default function Login() {
-    const [loading, setLoading] = useState(false)
-    const [response, setResponse] = useState(undefined)
-    const [error, setError] = useState(undefined)
+    const { mutateAsync: login, isPending: isLoggingIn } = useLogin()
+    const { isAuthenticated, refetch: refetchAuth } = useAuth()
+    const { refetchWallets } = useWallets()
 
+    const loginHandler = async (event: FormEvent<HTMLFormElement>) => {
+        event.preventDefault()
+        const formData = new FormData(event.currentTarget)
+        await login(formData.get('username') as string)
+        refetchAuth()
+        refetchWallets()
+    }
 
-    const login = async (event: FormEvent<HTMLFormElement>) => {
-        try {
-            setLoading(true)
-            event.preventDefault()
-
-            const formData = new FormData(event.currentTarget)
-
-            // start delegated registration flow and obtain a challenge
-            const loginRes = await fetch('/api/login', {
-                method: 'POST',
-                headers: {
-                    'content-type': 'application/json',
-                },
-                body: JSON.stringify({
-                    username: formData.get('username') as string,
-                }),
-            })
-
-            const body = await loginRes.json()
-
-            setResponse(body)
-            setError(undefined)
-        } catch (error: any) {
-            setResponse(undefined)
-            setError(error)
-        } finally {
-            setLoading(false)
-        }
+    if (isAuthenticated) {
+        return null
     }
 
     return (
-        <form onSubmit={login}>
-            <div className="w-full">
-                <div className="flex flex-col items-center gap-5">
-                    <Input type="email" name="username" placeholder="Username" className="input text-black border border-grey rounded-[10px] p-2" />
-                    <Button className="btn" type="submit">
-                        Login
-                    </Button>
+        <div className='flex flex-col gap-3 items-center'>
+            <form onSubmit={loginHandler}>
+                <div className="w-full flex flex-col gap-3 items-center">
+                    <p className="text-2xl font-bold">Login</p>
+                    <div className="flex flex-col items-center gap-5">
+                        <Input type="email" name="username" placeholder="Username" className="input text-black border border-grey rounded-[10px] p-2" />
+                        <Button className="btn" type="submit">
+                            Login
+                        </Button>
+                    </div>
+
+                    {!!isLoggingIn && <span>logging in ...</span>}
+
                 </div>
-
-                {!!loading && <span>login ...</span>}
-
-                {!!response && (
-                    <pre className="p-4 drop-shadow-lg mt-2 overflow-x-scroll">{JSON.stringify(response, null, 2)}</pre>
-                )}
-
-                {!!error && <div className="text-red-700">{JSON.stringify(error)}</div>}
-            </div>
-        </form>
+            </form>
+            <div className="h-[1px] w-full bg-black" />
+        </div>
     )
 }

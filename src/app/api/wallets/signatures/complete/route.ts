@@ -18,22 +18,7 @@ export const POST = async (request: NextRequest) => {
       signedChallenge
     );
     const res = result;
-
-    console.log("res", res);
-
-    const modifiedMessage = Buffer.from(
-      res.requestBody.message,
-      "hex"
-    ).toString("utf8");
-
-    return NextResponse.json({
-      ...res,
-      requestBody: {
-        ...res.requestBody,
-        message: modifiedMessage,
-      },
-    });
-    // return NextResponse.json(res);
+    return NextResponse.json(res);
   } catch (error) {
     console.error("Signature complete failed:", error);
     return NextResponse.json(
