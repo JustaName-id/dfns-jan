@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@dfns/sdk": "^0.6.2",
     "@dfns/sdk-browser": "^0.6.2",
     "@dfns/sdk-keysigner": "^0.6.2",
     "@justweb3/widget": "^0.0.109",
