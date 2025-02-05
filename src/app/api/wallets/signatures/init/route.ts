@@ -1,6 +1,59 @@
 import { delegatedClient } from "@/app/api/clients";
-import { GenerateSignatureBody } from "@dfns/sdk/types/Wallets";
 import { NextRequest, NextResponse } from "next/server";
+
+export type GenerateSignatureBody =
+  | {
+      kind: "SignDocDirect";
+      signDoc: string;
+      externalId?: string | undefined;
+    }
+  | {
+      kind: "Hash";
+      hash: string;
+      taprootMerkleRoot?: string | undefined;
+      externalId?: string | undefined;
+    }
+  | {
+      kind: "Message";
+      message: string;
+      externalId?: string | undefined;
+    }
+  | {
+      kind: "Transaction";
+      transaction: string;
+      externalId?: string | undefined;
+    }
+  | {
+      kind: "Eip712";
+      types: {
+        [x: string]: {
+          name: string;
+          type: string;
+        }[];
+      };
+      domain: {
+        name?: string | undefined;
+        version?: string | undefined;
+        chainId?: (number | string) | undefined;
+        verifyingContract?: string | undefined;
+        salt?: string | undefined;
+      };
+      message: {
+        [x: string]: unknown;
+      };
+      externalId?: string | undefined;
+    }
+  | {
+      kind: "Psbt";
+      psbt: string;
+      externalId?: string | undefined;
+    }
+  | {
+      kind: "Bip322";
+      message: string;
+      format?: ("Simple" | "Full") | undefined;
+      externalId?: string | undefined;
+    };
 
 export const POST = async (request: NextRequest) => {
   try {
