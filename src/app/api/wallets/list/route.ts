@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { delegatedClient } from "../../clients";
 
-export const POST = async (request: NextRequest) => {
+export const GET = async (request: NextRequest) => {
   try {
     const authToken = request.cookies.get("authToken")?.value;
     if (!authToken) {

@@ -1,6 +1,7 @@
-import type { Connector } from "wagmi";
+import type { Connector, ConnectorEventMap } from "wagmi";
 import EventEmitter from "eventemitter3";
 import { WebAuthnSigner } from "@dfns/sdk-browser";
+import { getAddress } from "viem";
 
 export interface DFNSWallet {
   id: string;
@@ -102,7 +103,7 @@ class DFNSProvider {
   }): Promise<any> {
     switch (method) {
       case "eth_accounts": {
-        return [this.wallet.address];
+        return [getAddress(this.wallet.address!).toLocaleLowerCase()];
       }
       case "personal_sign": {
         const [message, account] = params || [];
@@ -112,21 +113,23 @@ class DFNSProvider {
         ) {
           throw new Error("Account mismatch");
         }
-        // --- DFNS Sign Message Flow ---
-        // Step 1. Call your backend to initialize the signing process.
+
+        const newMessage = Buffer.from(message.slice(2), "hex").toString(
+          "utf8"
+        );
+
         const initRes = await fetch("/api/wallets/signatures/init", {
           method: "POST",
           credentials: "include",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             walletId: this.wallet.id,
-            message,
+            message: newMessage,
           }),
         });
         if (!initRes.ok) throw new Error("Failed to initialize signing");
         const { requestBody, challenge } = await initRes.json();
 
-        // Step 2. Use DFNS's WebAuthnSigner to sign the challenge.
         const webauthn = new WebAuthnSigner({
           relyingParty: {
             id: process.env.NEXT_PUBLIC_PASSKEYS_RELYING_PARTY_ID!,
@@ -134,8 +137,6 @@ class DFNSProvider {
           },
         });
         const assertion = await webauthn.sign(challenge);
-
-        // Step 3. Complete signing via your backend.
         const completeRes = await fetch("/api/wallets/signatures/complete", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -150,7 +151,8 @@ class DFNSProvider {
         });
         if (!completeRes.ok) throw new Error("Failed to complete signing");
         const finalResult = await completeRes.json();
-        return finalResult;
+
+        return finalResult.signature.encoded;
       }
       default: {
         throw new Error(`Method ${method} not supported by DFNSProvider`);
@@ -159,7 +161,6 @@ class DFNSProvider {
   }
 }
 
-// The connector implements the wagmi Connector interface.
 export class DFNSConnector implements Connector {
   readonly id = "dfns";
   readonly name = "DFNS Wallet";
@@ -177,7 +178,6 @@ export class DFNSConnector implements Connector {
   }
 
   async connect() {
-    // If already connected, simply return the connection details.
     if (this.connected && this.providerInstance) {
       return {
         accounts: [(await this.getAccount()) as `0x${string}`],
@@ -193,20 +193,25 @@ export class DFNSConnector implements Connector {
       chain: { id: this.chainId, unsupported: false },
     });
     return {
-      accounts: [account as `0x${string}`],
+      accounts: [getAddress(account!) as `0x${string}`],
       chainId: this.chainId,
       provider: this.providerInstance,
     };
   }
 
   async disconnect() {
+    await fetch("/api/logout", {
+      method: "POST",
+      credentials: "include",
+    });
     this.providerInstance = null;
     this.connected = false;
+    console.log("disconnect");
     this.emit("disconnect", undefined);
   }
 
   async getAccount() {
-    return this.wallet.address;
+    return getAddress(this.wallet.address!);
   }
 
   async getChainId() {

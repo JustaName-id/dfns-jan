@@ -10,7 +10,6 @@ export const POST = async (request: NextRequest) => {
 
     const { walletId, requestBody, signedChallenge } = await request.json();
     const client = delegatedClient(authToken);
-
     const result = await client.wallets.generateSignatureComplete(
       {
         walletId,
@@ -18,8 +17,23 @@ export const POST = async (request: NextRequest) => {
       },
       signedChallenge
     );
+    const res = result;
 
-    return NextResponse.json(result);
+    console.log("res", res);
+
+    const modifiedMessage = Buffer.from(
+      res.requestBody.message,
+      "hex"
+    ).toString("utf8");
+
+    return NextResponse.json({
+      ...res,
+      requestBody: {
+        ...res.requestBody,
+        message: modifiedMessage,
+      },
+    });
+    // return NextResponse.json(res);
   } catch (error) {
     console.error("Signature complete failed:", error);
     return NextResponse.json(

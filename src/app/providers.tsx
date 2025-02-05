@@ -1,26 +1,22 @@
 'use client'
 
+import { JustWeb3Provider, JustWeb3ProviderConfig } from '@justweb3/widget';
+import '@justweb3/widget/styles.css';
 import {
-  Chain,
   getDefaultConfig,
   getDefaultWallets,
-  RainbowKitProvider,
-  Wallet,
+  RainbowKitProvider
 } from '@rainbow-me/rainbowkit';
 import '@rainbow-me/rainbowkit/styles.css';
-import '@justweb3/widget/styles.css';
 import {
   argentWallet,
   ledgerWallet,
-  trustWallet,
-  walletConnectWallet
+  trustWallet
 } from '@rainbow-me/rainbowkit/wallets';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { useState } from 'react';
 import { http, WagmiProvider } from 'wagmi';
 import { mainnet, sepolia } from 'wagmi/chains';
-import { walletConnect } from 'wagmi/connectors'
-import { JustWeb3Provider, JustWeb3ProviderConfig } from '@justweb3/widget';
-import { useState } from 'react';
 
 interface ProviderProps {
   children: React.ReactNode;

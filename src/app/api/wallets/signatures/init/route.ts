@@ -16,6 +16,7 @@ export const POST = async (request: NextRequest) => {
       kind: "Message",
       message: Buffer.from(message, "utf-8").toString("hex"),
     };
+    console.log("body", body);
 
     const challenge = await client.wallets.generateSignatureInit({
       walletId,
