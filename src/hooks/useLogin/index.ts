@@ -1,4 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
+import { useToast } from "../useToast";
 
 export const login = async (username: string) => {
   try {
@@ -21,10 +22,20 @@ export const login = async (username: string) => {
 };
 
 export const useLogin = () => {
+  const { toast } = useToast();
   return useMutation({
     mutationFn: (username: string) => login(username),
+    onSuccess: () => {
+      toast({
+        variant: "default",
+        title: "Login successful",
+      });
+    },
     onError: (error) => {
-      console.log(error);
+      toast({
+        variant: "destructive",
+        title: error.message,
+      });
       throw error;
     },
   });

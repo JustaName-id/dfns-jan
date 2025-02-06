@@ -1,5 +1,6 @@
 import { WebAuthnSigner } from "@dfns/sdk-browser";
 import { useMutation } from "@tanstack/react-query";
+import { useToast } from "../useToast";
 
 export const register = async (username: string) => {
   try {
@@ -12,6 +13,12 @@ export const register = async (username: string) => {
         username,
       }),
     });
+
+    if (!initRes.ok) {
+      const errorData = await initRes.json();
+      throw new Error(errorData.error || "Registration failed");
+    }
+
     const challenge = await initRes.json();
 
     const webauthn = new WebAuthnSigner({
@@ -33,18 +40,32 @@ export const register = async (username: string) => {
       }),
     });
 
+    if (!completeRes.ok) {
+      const errorData = await completeRes.json();
+      throw new Error(errorData.error || "Registration completion failed");
+    }
+
     await completeRes.json();
   } catch (error) {
-    console.log(error);
     throw error;
   }
 };
 
 export const useRegister = () => {
+  const { toast } = useToast();
   return useMutation({
     mutationFn: (username: string) => register(username),
+    onSuccess: () => {
+      toast({
+        variant: "default",
+        title: "Registration successful",
+      });
+    },
     onError: (error) => {
-      console.log(error);
+      toast({
+        variant: "destructive",
+        title: error.message,
+      });
       throw error;
     },
   });

@@ -17,12 +17,8 @@ export default function Wallets() {
     const { isAuthenticated, refetch } = useAuth()
 
     const connectDFNSWallet = async (wallet: DFNSWallet) => {
-        try {
-            const connector = dfns({ wallet, chainId: 1 })
-            await connect({ connector: connector as never as Connector })
-        } catch (err) {
-            console.log('connectDFNSWallet error', err)
-        }
+        const connector = dfns({ wallet, chainId: 1 })
+        await connect({ connector: connector as never as Connector })
     }
 
     useEffect(() => {

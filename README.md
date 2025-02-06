@@ -1,6 +1,6 @@
 # JustAName Wallet System with DFNS Integration
 
-A Next.js-based wallet management system that leverages DFNS (Digital Financial Network Services) WaaS (Wallet-as-a-Service) for secure and scalable wallet operations. This project implements a complete wallet system with user registration, authentication, and Web3 capabilities.
+A Next.js-based wallet management system that leverages DFNS WaaS (Wallet-as-a-Service) for secure and scalable wallet operations and JustaName as an identity system. This project implements a complete wallet system with user registration, authentication, and Web3 capabilities.
 
 ## Features
 
@@ -44,16 +44,27 @@ pnpm install
 3. Set up your environment variables in `.env`:
 
 ```env
+# DFNS
 DFNS_API_URL=
 DFNS_APP_ID=
-DFNS_APP_ORIGIN=
 DFNS_CRED_ID=
 DFNS_PRIVATE_KEY=
+DFNS_AUTH_TOKEN=
 NEXT_PUBLIC_PASSKEYS_RELYING_PARTY_ID=
 NEXT_PUBLIC_PASSKEYS_RELYING_PARTY_NAME=
+# JustaName
+NODE_ENV=
+NEXT_PUBLIC_ORIGIN=
+NEXT_PUBLIC_DOMAIN=
+NEXT_PUBLIC_MAINNET_PROVIDER_URL=
+NEXT_PUBLIC_PROJECT_ID=
+NEXT_PUBLIC_DEV=
+DEV=
+MAINNET_PROVIDER_URL=
+SESSION_SECRET=
 ```
 
-4. Run the development server:
+1. Run the development server:
 
 ```bash
 npm run dev
@@ -83,7 +94,11 @@ src/
 ├── connectors/
 │   └── DFNSConnector.ts  # Custom Wagmi connector for DFNS
 └── hooks/
-    └── useRegister/      # Authentication hooks
+    ├── useAuth
+    ├── useLogin
+    ├── useRegister
+    ├── useToast
+    └── useWallets
 ```
 
 ## Core Components
@@ -104,16 +119,6 @@ The main application provides:
 - User registration interface
 - Login functionality
 - Wallet management dashboard
-- Transaction capabilities
-
-## API Routes
-
-The project includes several API endpoints:
-
-- `/api/clients` - Client management and authentication
-- `/api/wallets/signatures` - Transaction signing operations
-- `/api/wallets/signatures/init` - Initialize signing process
-- `/api/wallets/signatures/complete` - Complete signing process
 
 ## Configuration
 
@@ -123,7 +128,9 @@ This project requires proper configuration of DFNS credentials and WebAuthn sett
 
    - API URL
    - App ID and credentials
+   - Credential ID
    - Private key for secure operations
+   - Auth token for secure operations
 
 2. WebAuthn Configuration:
    - Relying Party ID (domain name)
@@ -134,6 +141,5 @@ This project requires proper configuration of DFNS credentials and WebAuthn sett
 The project uses TypeScript and follows modern development practices. Make sure to:
 
 - Follow the existing code style
-- Write tests for new features
 - Update documentation when making changes
 - Test WebAuthn functionality on HTTPS or localhost
