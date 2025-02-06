@@ -1,6 +1,7 @@
 import { WebAuthnSigner } from "@dfns/sdk-browser";
 import { useMutation } from "@tanstack/react-query";
 import { useToast } from "../useToast";
+import { useAuth } from "../useAuth";
 
 export const register = async (username: string) => {
   try {
@@ -53,6 +54,7 @@ export const register = async (username: string) => {
 
 export const useRegister = () => {
   const { toast } = useToast();
+  const { refetch } = useAuth();
   return useMutation({
     mutationFn: (username: string) => register(username),
     onSuccess: () => {
@@ -60,6 +62,7 @@ export const useRegister = () => {
         variant: "default",
         title: "Registration successful",
       });
+      refetch();
     },
     onError: (error) => {
       toast({
