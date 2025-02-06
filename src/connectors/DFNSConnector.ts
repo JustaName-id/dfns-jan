@@ -1,7 +1,7 @@
-import type { Connector, ConnectorEventMap } from "wagmi";
 import { WebAuthnSigner } from "@dfns/sdk-browser";
-import { getAddress } from "viem";
-import { Emitter } from "@wagmi/core/internal";
+import { Connector, createConnector } from "@wagmi/core";
+import { EventEmitter } from "events";
+import { getAddress, ProviderConnectInfo } from "viem";
 
 export interface DFNSWallet {
   id: string;
@@ -89,9 +89,10 @@ export interface DFNSWallet {
   tags: string[];
 }
 
-class DFNSProvider {
+class DFNSProvider extends EventEmitter {
   wallet: DFNSWallet;
   constructor(wallet: DFNSWallet) {
+    super();
     this.wallet = wallet;
   }
   async request({
@@ -99,14 +100,14 @@ class DFNSProvider {
     params,
   }: {
     method: string;
-    params: [message: string, account: string];
+    params?: any[];
   }): Promise<any> {
     switch (method) {
       case "eth_accounts": {
         return [getAddress(this.wallet.address!).toLocaleLowerCase()];
       }
       case "personal_sign": {
-        const [message, account] = params;
+        const [message, account] = params || [];
         if (
           !this.wallet.address ||
           account.toLowerCase() !== this.wallet.address.toLowerCase()
@@ -154,6 +155,10 @@ class DFNSProvider {
 
         return finalResult.signature.encoded;
       }
+      case "disconnect": {
+        this.emit("disconnect");
+        return;
+      }
       default: {
         throw new Error(`Method ${method} not supported by DFNSProvider`);
       }
@@ -161,116 +166,151 @@ class DFNSProvider {
   }
 }
 
-export class DFNSConnector implements Connector {
-  [key: string]: unknown;
-
-  readonly id = "dfns";
-  readonly name = "DFNS Wallet";
-  readonly uid = `${this.id}:${this.name}`;
-  readonly ready = true;
-  readonly type = "dfns" as const;
-
+export type DFNSConnectorParameters = {
   wallet: DFNSWallet;
   chainId: number;
-  providerInstance: DFNSProvider | null = null;
-  emitter = new Emitter<ConnectorEventMap>(this.uid);
-  private connected = false;
+};
 
-  constructor({ wallet, chainId }: { wallet: DFNSWallet; chainId: number }) {
-    this.wallet = wallet;
-    this.chainId = chainId;
-  }
+export function dfns({ wallet, chainId }: DFNSConnectorParameters) {
+  let providerInstance: DFNSProvider | null = null;
+  let connected = false;
 
-  async connect() {
-    if (this.connected && this.providerInstance) {
+  type Properties = {
+    onConnect(connectInfo: ProviderConnectInfo): void;
+    onDisplayUri(uri: string): void;
+  };
+
+  let accountsChanged: Connector["onAccountsChanged"] | undefined;
+  let chainChanged: Connector["onChainChanged"] | undefined;
+  let connect: Connector["onConnect"] | undefined;
+  let disconnect: Connector["onDisconnect"] | undefined;
+
+  return createConnector<DFNSProvider, Properties>((config) => ({
+    id: "dfns",
+    name: "DFNS Wallet",
+    icon: undefined,
+    rdns: undefined,
+    type: "wallet",
+    ready: true,
+    async setup() {
+      const provider = await this.getProvider();
+      if (provider.on) {
+        if (!connect) {
+          connect = this.onConnect.bind(this);
+          provider.on("connect", connect);
+        }
+        if (!accountsChanged) {
+          accountsChanged = this.onAccountsChanged.bind(this);
+          provider.on("accountsChanged", accountsChanged);
+        }
+      }
+    },
+    async connect({ chainId } = {}) {
+      const accounts = [getAddress(wallet.address!)];
+      const provider = await this.getProvider();
+      if (!connected) {
+        provider.on("disconnect", this.onDisconnect.bind(this));
+        connected = true;
+        provider.emit("connect", { chainId: chainId ?? 1 });
+        config.emitter.emit("connect", {
+          accounts: accounts,
+          chainId: chainId ?? 1,
+        });
+      }
+
       return {
-        accounts: [(await this.getAccount()) as `0x${string}`],
-        chainId: this.chainId,
-        provider: this.providerInstance,
+        accounts,
+        chainId: chainId ?? 1,
+        provider,
       };
-    }
-    const account = await this.getAccount();
-    this.providerInstance = new DFNSProvider(this.wallet);
-    this.connected = true;
-    this.emit("connect", {
-      accounts: [getAddress(account!) as `0x${string}`],
-      chainId: this.chainId,
-    });
+    },
+    async disconnect() {
+      await fetch("/api/logout", {
+        method: "POST",
+        credentials: "include",
+      });
+      const provider = await this.getProvider();
+      wallet.address = undefined;
+      if (provider) {
+        provider.emit("disconnect");
+      }
+      connected = false;
+      localStorage.removeItem("wagmi.connector");
+      localStorage.removeItem("wagmi.store");
+      config.emitter.emit("disconnect");
+    },
+    async getAccounts() {
+      return [getAddress(wallet.address!)];
+    },
 
-    return {
-      accounts: [getAddress(account!) as `0x${string}`],
-      chainId: this.chainId,
-      provider: this.providerInstance,
-    };
-  }
+    async getChainId() {
+      return chainId;
+    },
+    async getProvider(): Promise<DFNSProvider> {
+      if (!providerInstance) {
+        providerInstance = new DFNSProvider(wallet);
+      }
+      return providerInstance;
+    },
+    async isAuthorized() {
+      return connected;
+    },
+    async onAccountsChanged(accounts) {
+      if (config.emitter.listenerCount("connect")) {
+        const chainId = (await this.getChainId()).toString();
+        this.onConnect({ chainId });
+      } else
+        config.emitter.emit("change", {
+          accounts: accounts.map((x) => getAddress(x)),
+        });
+    },
+    onChainChanged(chain) {
+      const chainId = Number(chain);
+      config.emitter.emit("change", { chainId });
+    },
+    async onConnect(connectInfo) {
+      const accounts = await this.getAccounts();
+      if (accounts.length === 0) return;
 
-  async disconnect() {
-    await fetch("/api/logout", {
-      method: "POST",
-      credentials: "include",
-    });
-    this.wallet.address = undefined;
+      const chainId = Number(connectInfo.chainId);
+      config.emitter.emit("connect", { accounts, chainId });
+      const provider = await this.getProvider();
+      if (connect) {
+        provider.removeListener("connect", connect);
+        connect = undefined;
+      }
+      if (!accountsChanged) {
+        accountsChanged = this.onAccountsChanged.bind(this);
+        provider.on("accountsChanged", accountsChanged);
+      }
+      if (!chainChanged) {
+        chainChanged = this.onChainChanged.bind(this);
+        provider.on("chainChanged", chainChanged);
+      }
+      if (!disconnect) {
+        disconnect = this.onDisconnect.bind(this);
+        provider.on("disconnect", disconnect);
+      }
+    },
+    async onDisconnect() {
+      const provider = await this.getProvider();
+      config.emitter.emit("disconnect");
 
-    this.providerInstance = null;
-    this.connected = false;
-    localStorage.removeItem("wagmi.connector");
-    localStorage.removeItem("wagmi.store");
-
-    this.emit("disconnect");
-  }
-
-  async getAccount() {
-    return getAddress(this.wallet.address!);
-  }
-
-  async getChainId() {
-    return this.chainId;
-  }
-
-  async getProvider() {
-    if (!this.providerInstance) {
-      this.providerInstance = new DFNSProvider(this.wallet);
-    }
-    return this.providerInstance;
-  }
-
-  async isAuthorized() {
-    return this.connected;
-  }
-  on(event: keyof ConnectorEventMap, listener: (...args: any[]) => void): void {
-    this.emitter.on(event, listener);
-  }
-
-  off(
-    event: keyof ConnectorEventMap,
-    listener: (...args: any[]) => void
-  ): void {
-    this.emitter.off(event, listener);
-  }
-  emit<T extends keyof ConnectorEventMap>(
-    event: T,
-    ...args: ConnectorEventMap[T] extends [never]
-      ? []
-      : [data: ConnectorEventMap[T]]
-  ): void {
-    this.emitter.emit(event, ...args);
-  }
-
-  async getAccounts() {
-    return [getAddress(this.wallet.address!)];
-  }
-
-  onAccountsChanged(accounts: string[]) {
-    if (accounts.length === 0) this.emit("disconnect");
-    else this.emit("change", { accounts: [accounts[0] as `0x${string}`] });
-  }
-
-  onChainChanged(chain: number | string) {
-    const id = Number(chain);
-    this.emit("change", { chainId: id });
-  }
-
-  onDisconnect() {
-    this.emit("disconnect");
-  }
+      if (chainChanged) {
+        provider.removeListener("chainChanged", chainChanged);
+        chainChanged = undefined;
+      }
+      if (disconnect) {
+        provider.removeListener("disconnect", disconnect);
+        disconnect = undefined;
+      }
+      if (!connect) {
+        connect = this.onConnect.bind(this);
+        provider.on("connect", connect);
+      }
+    },
+    onDisplayUri(uri) {
+      config.emitter.emit("message", { type: "display_uri", data: uri });
+    },
+  }));
 }

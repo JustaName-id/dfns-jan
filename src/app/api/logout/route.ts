@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { delegatedClient } from "../clients";
+import { QueryClient } from "@tanstack/react-query";
 
 export const POST = async (request: NextRequest) => {
   try {
@@ -22,6 +23,8 @@ export const POST = async (request: NextRequest) => {
     );
 
     response.cookies.delete("authToken");
+    const queryClient = new QueryClient();
+    queryClient.refetchQueries({ queryKey: ["auth"] });
 
     return response;
   } catch (error) {

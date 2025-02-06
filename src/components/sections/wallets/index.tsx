@@ -1,7 +1,7 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
-import { DFNSConnector, DFNSWallet } from '@/connectors/DFNSConnector'
+import { dfns, DFNSWallet } from '@/connectors/DFNSConnector'
 import { useWallets } from '@/hooks'
 import { useAuth } from '@/hooks/useAuth'
 import { JustWeb3Button } from '@justweb3/widget'
@@ -18,7 +18,7 @@ export default function Wallets() {
 
     const connectDFNSWallet = async (wallet: DFNSWallet) => {
         try {
-            const connector = new DFNSConnector({ wallet, chainId: 1 })
+            const connector = dfns({ wallet, chainId: 1 })
             await connect({ connector: connector as never as Connector })
         } catch (err) {
             console.log('connectDFNSWallet error', err)
@@ -26,9 +26,7 @@ export default function Wallets() {
     }
 
     useEffect(() => {
-        if (isConnected) {
-            refetch()
-        }
+        refetch()
     }, [isConnected, refetch])
 
 
